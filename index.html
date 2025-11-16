@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مدرسہ تعلیم القرآن - کمالی رجسٹریشن بونیر</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Arial,sans-serif;background:#f0f9f7;color:#333}
+.header{background:#10b981;color:#fff;padding:15px;text-align:center}
+.header h1{font-size:24px;font-weight:bold}
+.header p{font-size:14px;opacity:0.9}
+.container{max-width:900px;margin:0 auto;padding:20px}
+.form-group{margin:15px 0}
+label{display:block;font-weight:bold;margin:5px 0;font-size:14px}
+input,select,textarea{width:100%;padding:8px;margin:5px 0;border:1px solid #d1d5db;border-radius:4px;font-size:14px}
+button{background:#10b981;color:#fff;padding:10px 20px;border:none;border-radius:4px;cursor:pointer;font-size:14px;margin:5px 2px}
+button:hover{background:#059669}
+button.danger{background:#ef4444}
+button.danger:hover{background:#dc2626}
+.hidden{display:none}
+.nav{background:#047857;padding:10px;display:flex;gap:10px;flex-wrap:wrap}
+.nav button{margin:0}
+table{width:100%;border-collapse:collapse;margin:15px 0}
+table th,table td{padding:10px;text-align:right;border:1px solid #d1d5db}
+table th{background:#10b981;color:#fff}
+.results-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.result-card{background:#fff;padding:15px;border-radius:4px;border-left:4px solid #10b981}
+.modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:1000}
+.modal-content{background:#fff;padding:20px;border-radius:4px;max-width:500px;width:90%}
+.modal.active{display:flex}
+.close{float:left;cursor:pointer;font-size:24px;color:#aaa}
+@media(max-width:600px){
+.results-grid{grid-template-columns:1fr}
+.header h1{font-size:18px}
+.nav{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+<h1>مدرسہ تعلیم القرآن</h1>
+<p>کمالی رجسٹریشن بونیر</p>
+</div>
+
+<div id="loginPage" class="container">
+<h2>داخل ہوں</h2>
+<div class="form-group">
+<label>صارف کی قسم:</label>
+<select id="userType">
+<option value="admin">ایڈمن</option>
+<option value="student">طالب علم</option>
+</select>
+</div>
+<div class="form-group">
+<label id="usernameLabel">یوزرنیم:</label>
+<input type="text" id="username" placeholder="admin یا رجسٹریشن نمبر">
+</div>
+<div class="form-group">
+<label id="passwordLabel">پاس ورڈ:</label>
+<input type="password" id="password" placeholder="پاس ورڈ">
+</div>
+<button onclick="login()">داخل ہوں</button>
+</div>
+
+<div id="adminPanel" class="hidden">
+<div class="nav">
+<button onclick="showTab('students')">طالب علم</button>
+<button onclick="showTab('exams')">امتحان</button>
+<button onclick="showTab('subjects')">مضامین</button>
+<button onclick="showTab('results')">نتائج</button>
+<button onclick="logout()">لاگ آؤٹ</button>
+</div>
+<div class="container">
+<div id="studentsTab" class="tab-content">
+<h2>طالب علم</h2>
+<button onclick="openStudentModal()">نیا طالب علم شامل کریں</button>
+<table id="studentsList"><tr><th>رجسٹریشن نمبر</th><th>نام</th><th>کلاس</th><th>عمل</th></tr></table>
+</div>
+
+<div id="examsTab" class="tab-content hidden">
+<h2>امتحان</h2>
+<button onclick="openExamModal()">نیا امتحان شامل کریں</button>
+<table id="examsList"><tr><th>نام</th><th>کلاس</th><th>حالت</th><th>عمل</th></tr></table>
+</div>
+
+<div id="subjectsTab" class="tab-content hidden">
+<h2>مضامین</h2>
+<button onclick="openSubjectModal()">نیا مضمون شامل کریں</button>
+<table id="subjectsList"><tr><th>نام</th><th>کلاس</th><th>عمل</th></tr></table>
+</div>
+
+<div id="resultsTab" class="tab-content hidden">
+<h2>نتائج</h2>
+<button onclick="openResultModal()">نیا نتیجہ شامل کریں</button>
+<table id="resultsList"><tr><th>رجسٹریشن نمبر</th><th>امتحان</th><th>مضمون</th><th>نمبر</th><th>عمل</th></tr></table>
+</div>
+</div>
+</div>
+
+<div id="studentPanel" class="hidden">
+<div class="nav">
+<button onclick="viewResults()">میرے نتائج</button>
+<button onclick="logout()">لاگ آؤٹ</button>
+</div>
+<div class="container">
+<div id="studentResults"></div>
+</div>
+</div>
+
+<div id="studentModal" class="modal">
+<div class="modal-content">
+<span class="close" onclick="closeStudentModal()">&times;</span>
+<h3>طالب علم</h3>
+<div class="form-group"><input type="text" id="studentReg" placeholder="رجسٹریشن نمبر"></div>
+<div class="form-group"><input type="text" id="studentName" placeholder="نام"></div>
+<div class="form-group"><select id="studentClass"><option value="">کلاس منتخب کریں</option></select></div>
+<button onclick="saveStudent()">محفوظ کریں</button>
+</div>
+</div>
+
+<div id="examModal" class="modal">
+<div class="modal-content">
+<span class="close" onclick="closeExamModal()">&times;</span>
+<h3>امتحان</h3>
+<div class="form-group"><input type="text" id="examName" placeholder="نام"></div>
+<div class="form-group"><select id="examClass"><option value="">کلاس منتخب کریں</option></select></div>
+<div class="form-group"><select id="examStatus"><option value="draft">ڈرافٹ</option><option value="published">شائع شدہ</option></select></div>
+<button onclick="saveExam()">محفوظ کریں</button>
+</div>
+</div>
+
+<div id="subjectModal" class="modal">
+<div class="modal-content">
+<span class="close" onclick="closeSubjectModal()">&times;</span>
+<h3>مضمون</h3>
+<div class="form-group"><input type="text" id="subjectName" placeholder="نام"></div>
+<div class="form-group"><select id="subjectClass"><option value="">کلاس منتخب کریں</option></select></div>
+<button onclick="saveSubject()">محفوظ کریں</button>
+</div>
+</div>
+
+<div id="resultModal" class="modal">
+<div class="modal-content">
+<span class="close" onclick="closeResultModal()">&times;</span>
+<h3>نتیجہ</h3>
+<div class="form-group"><select id="resultStudent"><option value="">طالب علم منتخب کریں</option></select></div>
+<div class="form-group"><select id="resultExam"><option value="">امتحان منتخب کریں</option></select></div>
+<div class="form-group"><select id="resultSubject"><option value="">مضمون منتخب کریں</option></select></div>
+<div class="form-group"><input type="number" id="resultMarks" placeholder="نمبر" min="0" max="100"></div>
+<button onclick="saveResult()">محفوظ کریں</button>
+</div>
+</div>
+
+<script>
+const classes = ['کلاس 1','کلاس 2','کلاس 3','کلاس 4','کلاس 5','کلاس 6','کلاس 7','کلاس 8'];
+const subjects = {
+  'کلاس 1':['قرآن پڑھنا','نورانی قاعدہ','تجوید بنیادی','اسلامی اداب'],
+  'کلاس 2':['حفظ (سورتیں)','تجوید','عربی الفاظ','اسلامی علوم'],
+  'کلاس 3':['حفظ (لمبی سورتیں)','تجوید متقدم','تفسیر بنیادی','حدیث'],
+  'کلاس 4':['نزرہ پڑھنا','تجوید متقدم','عربی گرائمر','سیرت'],
+  'کلاس 5':['عربی گرائمر','بلاغہ','اصول فقہ','تفسیر'],
+  'کلاس 6':['فقہ بنیادی','حدیث مطالعہ','تفسیر متقدم','منطق'],
+  'کلاس 7':['فقہ متقدم','اصول حدیث','عربی ادب','مقارن مذاہب'],
+  'کلاس 8':['دعوت کے طریقے','تدریس کا طریقہ','مذہبی اخلاقیات','تحقیق پروجیکٹ']
+};
+
+let db = {
+  students: [],
+  exams: [],
+  subjects: [],
+  results: [],
+  currentUser: null
+};
+
+function initDB() {
+  const saved = localStorage.getItem('madrasa_db');
+  if(!saved) {
+    db.students = [
+      {id:'MTQ6001',name:'احمد علی',class:'کلاس 1'},
+      {id:'MTQ6002',name:'علی رضا',class:'کلاس 2'},
+      {id:'MTQ6003',name:'فاطمہ',class:'کلاس 1'},
+      {id:'MTQ6004',name:'زینب',class:'کلاس 3'},
+      {id:'MTQ6005',name:'محمد حسن',class:'کلاس 2'}
+    ];
+    db.exams = [
+      {id:'E1',name:'نیم سالانہ امتحان',class:'کلاس 1',status:'published'},
+      {id:'E2',name:'سالانہ امتحان',class:'کلاس 1',status:'draft'}
+    ];
+    db.subjects = classes.flatMap((c,i)=>subjects[c].map(s=>({id:Math.random(),name:s,class:c})));
+    db.results = [
+      {id:'R1',student:'MTQ6001',exam:'E1',subject:'قرآن پڑھنا',marks:85},
+      {id:'R2',student:'MTQ6001',exam:'E1',subject:'نورانی قاعدہ',marks:90},
+      {id:'R3',student:'MTQ6002',exam:'E1',subject:'حفظ (سورتیں)',marks:78},
+      {id:'R4',student:'MTQ6003',exam:'E1',subject:'قرآن پڑھنا',marks:92}
+    ];
+    saveDB();
+  } else {
+    db = JSON.parse(saved);
+  }
+}
+
+function saveDB() {
+  localStorage.setItem('madrasa_db',JSON.stringify(db));
+}
+
+function login() {
+  const type = document.getElementById('userType').value;
+  const user = document.getElementById('username').value;
+  const pass = document.getElementById('password').value;
+  if(type==='admin' && user==='admin' && pass==='admin123') {
+    db.currentUser = {type:'admin'};
+    showAdminPanel();
+  } else if(type==='student' && db.students.find(s=>s.id===user)) {
+    db.currentUser = {type:'student',id:user};
+    showStudentPanel();
+  } else {
+    alert('غلط معلومات');
+  }
+}
+
+function logout() {
+  db.currentUser = null;
+  document.getElementById('loginPage').classList.remove('hidden');
+  document.getElementById('adminPanel').classList.add('hidden');
+  document.getElementById('studentPanel').classList.add('hidden');
+  document.getElementById('username').value = '';
+  document.getElementById('password').value = '';
+}
+
+function showAdminPanel() {
+  document.getElementById('loginPage').classList.add('hidden');
+  document.getElementById('adminPanel').classList.remove('hidden');
+  showTab('students');
+}
+
+function showStudentPanel() {
+  document.getElementById('loginPage').classList.add('hidden');
+  document.getElementById('studentPanel').classList.remove('hidden');
+  viewResults();
+}
+
+function showTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.add('hidden'));
+  document.getElementById(tab+'Tab').classList.remove('hidden');
+  if(tab==='students') renderStudents();
+  if(tab==='exams') renderExams();
+  if(tab==='subjects') renderSubjects();
+  if(tab==='results') renderResults();
+}
+
+function renderStudents() {
+  const html = db.students.map(s=>`<tr><td>${s.id}</td><td>${s.name}</td><td>${s.class}</td><td><button onclick="editStudent('${s.id}')">ترمیم</button> <button class="danger" onclick="deleteStudent('${s.id}')">حذف</button></td></tr>`).join('');
+  document.getElementById('studentsList').innerHTML = '<tr><th>رجسٹریشن نمبر</th><th>نام</th><th>کلاس</th><th>عمل</th></tr>' + html;
+  populateSelects();
+}
+
+function renderExams() {
+  const html = db.exams.map(e=>`<tr><td>${e.name}</td><td>${e.class}</td><td>${e.status}</td><td><button onclick="editExam('${e.id}')">ترمیم</button> <button class="danger" onclick="deleteExam('${e.id}')">حذف</button></td></tr>`).join('');
+  document.getElementById('examsList').innerHTML = '<tr><th>نام</th><th>کلاس</th><th>حالت</th><th>عمل</th></tr>' + html;
+}
+
+function renderSubjects() {
+  const html = db.subjects.map(s=>`<tr><td>${s.name}</td><td>${s.class}</td><td><button onclick="editSubject('${s.id}')">ترمیم</button> <button class="danger" onclick="deleteSubject('${s.id}')">حذف</button></td></tr>`).join('');
+  document.getElementById('subjectsList').innerHTML = '<tr><th>نام</th><th>کلاس</th><th>عمل</th></tr>' + html;
+}
+
+function renderResults() {
+  const html = db.results.map(r=>`<tr><td>${r.student}</td><td>${db.exams.find(e=>e.id===r.exam)?.name}</td><td>${r.subject}</td><td>${r.marks}</td><td><button onclick="editResult('${r.id}')">ترمیم</button> <button class="danger" onclick="deleteResult('${r.id}')">حذف</button></td></tr>`).join('');
+  document.getElementById('resultsList').innerHTML = '<tr><th>رجسٹریشن نمبر</th><th>امتحان</th><th>مضمون</th><th>نمبر</th><th>عمل</th></tr>' + html;
+}
+
+function populateSelects() {
+  ['studentClass','examClass','subjectClass'].forEach(sel=>{
+    const html = classes.map(c=>`<option value="${c}">${c}</option>`).join('');
+    document.getElementById(sel).innerHTML = '<option value="">کلاس منتخب کریں</option>'+html;
+  });
+  const shtml = db.students.map(s=>`<option value="${s.id}">${s.id} - ${s.name}</option>`).join('');
+  document.getElementById('resultStudent').innerHTML = '<option value="">طالب علم منتخب کریں</option>'+shtml;
+  const ehtml = db.exams.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
+  document.getElementById('resultExam').innerHTML = '<option value="">امتحان منتخب کریں</option>'+ehtml;
+}
+
+function openStudentModal() {
+  document.getElementById('studentReg').value='';
+  document.getElementById('studentName').value='';
+  document.getElementById('studentClass').value='';
+  document.getElementById('studentModal').classList.add('active');
+}
+
+function closeStudentModal() {
+  document.getElementById('studentModal').classList.remove('active');
+}
+
+function saveStudent() {
+  const id = document.getElementById('studentReg').value;
+  const name = document.getElementById('studentName').value;
+  const c = document.getElementById('studentClass').value;
+  if(!id||!name||!c) {alert('تمام فیلڈز بھریں');return;}
+  const idx = db.students.findIndex(s=>s.id===id);
+  if(idx>-1) db.students[idx] = {id,name,class:c};
+  else db.students.push({id,name,class:c});
+  saveDB();
+  renderStudents();
+  closeStudentModal();
+}
+
+function editStudent(id) {
+  const s = db.students.find(x=>x.id===id);
+  document.getElementById('studentReg').value = s.id;
+  document.getElementById('studentName').value = s.name;
+  document.getElementById('studentClass').value = s.class;
+  openStudentModal();
+}
+
+function deleteStudent(id) {
+  if(confirm('حذف کریں؟')) {
+    db.students = db.students.filter(s=>s.id!==id);
+    saveDB();
+    renderStudents();
+  }
+}
+
+function openExamModal() {
+  document.getElementById('examName').value='';
+  document.getElementById('examClass').value='';
+  document.getElementById('examStatus').value='draft';
+  document.getElementById('examModal').classList.add('active');
+}
+
+function closeExamModal() {
+  document.getElementById('examModal').classList.remove('active');
+}
+
+function saveExam() {
+  const name = document.getElementById('examName').value;
+  const c = document.getElementById('examClass').value;
+  const status = document.getElementById('examStatus').value;
+  if(!name||!c) {alert('تمام فیلڈز بھریں');return;}
+  const id = 'E'+Date.now();
+  db.exams.push({id,name,class:c,status});
+  saveDB();
+  renderExams();
+  closeExamModal();
+}
+
+function editExam(id) {
+  const e = db.exams.find(x=>x.id===id);
+  document.getElementById('examName').value = e.name;
+  document.getElementById('examClass').value = e.class;
+  document.getElementById('examStatus').value = e.status;
+  openExamModal();
+}
+
+function deleteExam(id) {
+  if(confirm('حذف کریں؟')) {
+    db.exams = db.exams.filter(e=>e.id!==id);
+    saveDB();
+    renderExams();
+  }
+}
+
+function openSubjectModal() {
+  document.getElementById('subjectName').value='';
+  document.getElementById('subjectClass').value='';
+  document.getElementById('subjectModal').classList.add('active');
+}
+
+function closeSubjectModal() {
+  document.getElementById('subjectModal').classList.remove('active');
+}
+
+function saveSubject() {
+  const name = document.getElementById('subjectName').value;
+  const c = document.getElementById('subjectClass').value;
+  if(!name||!c) {alert('تمام فیلڈز بھریں');return;}
+  db.subjects.push({id:Math.random(),name,class:c});
+  saveDB();
+  renderSubjects();
+  closeSubjectModal();
+}
+
+function editSubject(id) {
+  const s = db.subjects.find(x=>x.id===id);
+  document.getElementById('subjectName').value = s.name;
+  document.getElementById('subjectClass').value = s.class;
+  openSubjectModal();
+}
+
+function deleteSubject(id) {
+  if(confirm('حذف کریں؟')) {
+    db.subjects = db.subjects.filter(s=>s.id!==id);
+    saveDB();
+    renderSubjects();
+  }
+}
+
+function openResultModal() {
+  document.getElementById('resultStudent').value='';
+  document.getElementById('resultExam').value='';
+  document.getElementById('resultSubject').value='';
+  document.getElementById('resultMarks').value='';
+  document.getElementById('resultModal').classList.add('active');
+}
+
+function closeResultModal() {
+  document.getElementById('resultModal').classList.remove('active');
+}
+
+function saveResult() {
+  const student = document.getElementById('resultStudent').value;
+  const exam = document.getElementById('resultExam').value;
+  const subject = document.getElementById('resultSubject').value;
+  const marks = document.getElementById('resultMarks').value;
+  if(!student||!exam||!subject||!marks) {alert('تمام فیلڈز بھریں');return;}
+  db.results.push({id:'R'+Date.now(),student,exam,subject,marks:parseInt(marks)});
+  saveDB();
+  renderResults();
+  closeResultModal();
+}
+
+function editResult(id) {
+  const r = db.results.find(x=>x.id===id);
+  document.getElementById('resultStudent').value = r.student;
+  document.getElementById('resultExam').value = r.exam;
+  document.getElementById('resultSubject').value = r.subject;
+  document.getElementById('resultMarks').value = r.marks;
+  openResultModal();
+}
+
+function deleteResult(id) {
+  if(confirm('حذف کریں؟')) {
+    db.results = db.results.filter(r=>r.id!==id);
+    saveDB();
+    renderResults();
+  }
+}
+
+function viewResults() {
+  const sid = db.currentUser.id;
+  const student = db.students.find(s=>s.id===sid);
+  const publishedExams = db.exams.filter(e=>e.status==='published');
+  const results = db.results.filter(r=>r.student===sid);
+  let html = `<h2>${student.name} کے نتائج</h2>`;
+  publishedExams.forEach(exam=>{
+    const examResults = results.filter(r=>r.exam===exam.id);
+    if(examResults.length>0) {
+      const total = examResults.reduce((a,b)=>a+b.marks,0);
+      const avg = Math.round(total/examResults.length);
+      let grade = avg>=90?'A':avg>=80?'B':avg>=70?'C':avg>=60?'D':'F';
+      html += `<div class="result-card"><h3>${exam.name}</h3>
+      <table><tr><th>مضمون</th><th>نمبر</th></tr>`;
+      examResults.forEach(r=>{
+        html += `<tr><td>${r.subject}</td><td>${r.marks}</td></tr>`;
+      });
+      html += `</table><p>کل: ${total} | فیصد: ${avg}% | گریڈ: ${grade}</p>
+      <button onclick="downloadPDF('${sid}','${exam.id}')">PDF ڈاؤن لوڈ</button></div>`;
+    }
+  });
+  if(publishedExams.length===0) html += '<p>کوئی امتحان شائع نہیں</p>';
+  document.getElementById('studentResults').innerHTML = html;
+}
+
+function downloadPDF(studentId, examId) {
+  const student = db.students.find(s=>s.id===studentId);
+  const exam = db.exams.find(e=>e.id===examId);
+  const results = db.results.filter(r=>r.student===studentId && r.exam===examId);
+  const total = results.reduce((a,b)=>a+b.marks,0);
+  const avg = Math.round(total/results.length);
+  let grade = avg>=90?'A':avg>=80?'B':avg>=70?'C':avg>=60?'D':'F';
+
+  const {jsPDF} = window.jspdf;
+  const pdf = new jsPDF();
+  pdf.setFont('Courier');
+  pdf.text('MADRASA TALEEM UL QURAN - KAMALY REGR BUNER',20,20);
+  pdf.text(`Student: ${student.name} (${student.id})`,20,35);
+  pdf.text(`Exam: ${exam.name}`,20,45);
+  let y = 55;
+  pdf.text('Subject | Marks',20,y);
+  y+=8;
+  results.forEach(r=>{
+    pdf.text(`${r.subject} | ${r.marks}`,20,y);
+    y+=8;
+  });
+  y+=5;
+  pdf.text(`Total: ${total} | Percentage: ${avg}% | Grade: ${grade}`,20,y);
+  y+=15;
+  pdf.text('_____________________',20,y);
+  pdf.text('Signature',20,y+5);
+  pdf.save(`Result_${studentId}_${examId}.pdf`);
+}
+
+document.getElementById('userType').addEventListener('change',(e)=>{
+  document.getElementById('usernameLabel').textContent = e.value==='admin'?'یوزرنیم':'رجسٹریشن نمبر';
+  document.getElementById('passwordLabel').textContent = e.value==='admin'?'پاس ورڈ':'(خالی چھوڑیں)';
+  document.getElementById('password').style.display = e.value==='admin'?'block':'none';
+});
+
+initDB();
+</script>
+</body>
+</html>
