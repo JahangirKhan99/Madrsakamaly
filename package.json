@@ -1,0 +1,14 @@
+{
+  "name": "madrasa-exam-portal",
+  "version": "1.0.0",
+  "description": "Madrasa Taleem Ul Quran - Kamaly Regr Buner Exam Result Portal",
+  "main": "index.html",
+  "type": "module",
+  "scripts": {
+    "build": "echo 'Static site - no build needed'",
+    "start": "echo 'Open index.html in browser'"
+  },
+  "keywords": ["exam", "results", "madrasa"],
+  "author": "",
+  "license": "MIT"
+}
